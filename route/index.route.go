@@ -2,4 +2,6 @@ package route
 
 func RouteInit() {
 
+
 }
+
