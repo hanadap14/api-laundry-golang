@@ -12,4 +12,6 @@ func main() {
 	app := fiber.New()
 
 	route.RouteInit(app)
+
+	app.Listen(":3000")
 }
