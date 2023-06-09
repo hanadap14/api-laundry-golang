@@ -1,1 +1,100 @@
 package controller
+
+import (
+	"github.com/gofiber/fiber"
+	"github.com/hanadap14/api-laundry-golang.git/database"
+	models "github.com/hanadap14/api-laundry-golang.git/model"
+)
+
+func GetPickupAll(c *fiber.Ctx) {
+	var pickups []models.Pickup
+
+	database.DB.Find(&pickups)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Get all pickups",
+		"data":    pickups,
+	})
+
+}
+
+func GetPickupById(c *fiber.Ctx) {
+	id := c.Params("id")
+
+	var pickup models.Pickup
+
+	database.DB.Find(&pickup, id)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Get pickup by id",
+		"data":    pickup,
+	})
+}
+
+func CreatePickup(c *fiber.Ctx) {
+	pickup := new(models.Pickup)
+
+	if err := c.BodyParser(pickup); err != nil {
+		c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Cannot parse JSON",
+			"data":    err,
+		})
+	}
+
+	database.DB.Create(&pickup)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Create pickup",
+		"data":    pickup,
+	})
+}
+
+func UpdatePickup(c *fiber.Ctx) {
+	id := c.Params("id")
+
+	pickup := new(models.Pickup)
+
+	if err := c.BodyParser(pickup); err != nil {
+		c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Cannot parse JSON",
+			"data":    err,
+		})
+	}
+
+	database.DB.Model(&pickup).Where("id = ?", id).Updates(pickup)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Update pickup",
+		"data":    pickup,
+	})
+}
+
+func DeletePickup(c *fiber.Ctx) {
+	id := c.Params("id")
+
+	var pickup models.Pickup
+
+	database.DB.First(&pickup, id)
+	if pickup.ID == 0 {
+		c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Pickup not found",
+			"data":    nil,
+		})
+		return
+	}
+
+	database.DB.Delete(&pickup)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Delete pickup",
+		"data":    pickup,
+	})
+}
