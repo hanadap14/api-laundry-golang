@@ -1,4 +1,4 @@
-module github.com/hanadap14/finproGolang.git
+module github.com/hanadap14/api-laundry-golang.git
 
 go 1.20
 
