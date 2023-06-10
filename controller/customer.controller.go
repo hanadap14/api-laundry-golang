@@ -35,6 +35,8 @@ func GetCustomerById(c *fiber.Ctx) error {
 func CreateCustomer(c *fiber.Ctx) error {
 	customer := new(models.Customer)
 
+	customerInput := new(models.CustomerInput)
+
 	if err := c.BodyParser(customer); err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -45,10 +47,13 @@ func CreateCustomer(c *fiber.Ctx) error {
 
 	database.DB.Create(&customer)
 
+	customerInput.Name = customer.Name
+	customerInput.Address = customer.Address
+
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Create customer",
-		"data":    customer,
+		"data":    customerInput,
 	})
 }
 
@@ -56,6 +61,8 @@ func UpdateCustomer(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	customer := new(models.Customer)
+
+	customerInput := new(models.CustomerInput)
 
 	if err := c.BodyParser(customer); err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -65,19 +72,15 @@ func UpdateCustomer(c *fiber.Ctx) error {
 		})
 	}
 
-	var customerUpdate models.Customer
+	database.DB.Model(&customer).Where("id = ?", id).Updates(customer)
 
-	database.DB.First(&customerUpdate, id)
-
-	customerUpdate.Name = customer.Name
-	customerUpdate.Address = customer.Address
-
-	database.DB.Save(&customerUpdate)
+	customerInput.Name = customer.Name
+	customerInput.Address = customer.Address
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Update customer",
-		"data":    customerUpdate,
+		"data":    customerInput,
 	})
 }
 

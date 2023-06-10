@@ -9,7 +9,7 @@ import (
 func GetBillAll(c *fiber.Ctx) error {
 	var bills []models.Bill
 
-	database.DB.Find(&bills)
+	database.DB.Preload("Order").Preload("Order.Customer").Find(&bills)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
@@ -23,7 +23,7 @@ func GetBillById(c *fiber.Ctx) error {
 
 	var bill models.Bill
 
-	database.DB.Find(&bill, id)
+	database.DB.Preload("Order").Preload("Order.Customer").Find(&bill, id)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
@@ -35,6 +35,8 @@ func GetBillById(c *fiber.Ctx) error {
 func CreateBill(c *fiber.Ctx) error {
 	bill := new(models.Bill)
 
+	billInput := new(models.BillInput)
+
 	if err := c.BodyParser(bill); err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -45,10 +47,14 @@ func CreateBill(c *fiber.Ctx) error {
 
 	database.DB.Create(&bill)
 
+	billInput.Order_id = bill.Order_id
+	billInput.Amount = bill.Amount
+	billInput.Paid = bill.Paid
+
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Create bill",
-		"data":    bill,
+		"data":    billInput,
 	})
 }
 
@@ -57,7 +63,9 @@ func UpdateBill(c *fiber.Ctx) error {
 
 	bill := new(models.Bill)
 
-	if err := c.BodyParser(bill); err != nil {
+	billInput := new(models.BillInput)
+
+	if err := c.BodyParser(billInput); err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Cannot parse JSON",
@@ -65,14 +73,14 @@ func UpdateBill(c *fiber.Ctx) error {
 		})
 	}
 
-	database.DB.Find(&bill, id)
-	database.DB.Save(&bill)
+	database.DB.Model(&bill).Where("id = ?", id).Updates(billInput)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Update bill",
-		"data":    bill,
+		"data":    billInput,
 	})
+
 }
 
 func DeleteBill(c *fiber.Ctx) error {

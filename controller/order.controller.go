@@ -9,7 +9,7 @@ import (
 func GetOrderAll(c *fiber.Ctx) error {
 	var orders []models.Order
 
-	database.DB.Find(&orders)
+	database.DB.Preload("Customer").Find(&orders)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
@@ -23,7 +23,7 @@ func GetOrderById(c *fiber.Ctx) error {
 
 	var order models.Order
 
-	database.DB.Find(&order, id)
+	database.DB.Preload("Customer").Find(&order, id)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
@@ -35,6 +35,8 @@ func GetOrderById(c *fiber.Ctx) error {
 func CreateOrder(c *fiber.Ctx) error {
 	order := new(models.Order)
 
+	orderInput := new(models.OrderInput)
+
 	if err := c.BodyParser(order); err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -45,10 +47,15 @@ func CreateOrder(c *fiber.Ctx) error {
 
 	database.DB.Create(&order)
 
+	orderInput.CustomerID = order.CustomerID
+	orderInput.Item = order.Item
+	orderInput.Quantity = order.Quantity
+	orderInput.TotalPrice = order.TotalPrice
+
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Create order",
-		"data":    order,
+		"data":    orderInput,
 	})
 }
 
@@ -57,7 +64,9 @@ func UpdateOrder(c *fiber.Ctx) error {
 
 	order := new(models.Order)
 
-	if err := c.BodyParser(order); err != nil {
+	orderInput := new(models.OrderInput)
+
+	if err := c.BodyParser(orderInput); err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Cannot parse JSON",
@@ -65,13 +74,12 @@ func UpdateOrder(c *fiber.Ctx) error {
 		})
 	}
 
-	database.DB.Find(&order, id)
-	database.DB.Save(&order)
+	database.DB.Model(&order).Where("id = ?", id).Updates(orderInput)
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Update order",
-		"data":    order,
+		"data":    orderInput,
 	})
 }
 

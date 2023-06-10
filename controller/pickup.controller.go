@@ -9,7 +9,7 @@ import (
 func GetPickupAll(c *fiber.Ctx) {
 	var pickups []models.Pickup
 
-	database.DB.Find(&pickups)
+	database.DB.Preload("Order").Preload("Order.Customer").Find(&pickups)
 
 	c.JSON(fiber.Map{
 		"status":  "success",
@@ -24,7 +24,7 @@ func GetPickupById(c *fiber.Ctx) {
 
 	var pickup models.Pickup
 
-	database.DB.Find(&pickup, id)
+	database.DB.Preload("Order").Preload("Order.Customer").Find(&pickup, id)
 
 	c.JSON(fiber.Map{
 		"status":  "success",
@@ -36,6 +36,8 @@ func GetPickupById(c *fiber.Ctx) {
 func CreatePickup(c *fiber.Ctx) {
 	pickup := new(models.Pickup)
 
+	pickupInput := new(models.PickupInput)
+
 	if err := c.BodyParser(pickup); err != nil {
 		c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -46,10 +48,13 @@ func CreatePickup(c *fiber.Ctx) {
 
 	database.DB.Create(&pickup)
 
+	pickupInput.OrderID = pickup.OrderID
+	pickupInput.Date = pickup.Date
+
 	c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Create pickup",
-		"data":    pickup,
+		"data":    pickupInput,
 	})
 }
 
@@ -58,7 +63,9 @@ func UpdatePickup(c *fiber.Ctx) {
 
 	pickup := new(models.Pickup)
 
-	if err := c.BodyParser(pickup); err != nil {
+	pickupInput := new(models.PickupInput)
+
+	if err := c.BodyParser(pickupInput); err != nil {
 		c.Status(500).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Cannot parse JSON",
@@ -66,12 +73,12 @@ func UpdatePickup(c *fiber.Ctx) {
 		})
 	}
 
-	database.DB.Model(&pickup).Where("id = ?", id).Updates(pickup)
+	database.DB.Model(&pickup).Where("id = ?", id).Updates(pickupInput)
 
 	c.JSON(fiber.Map{
 		"status":  "success",
 		"message": "Update pickup",
-		"data":    pickup,
+		"data":    pickupInput,
 	})
 }
 
